@@ -1,8 +1,8 @@
 import { kafka } from './client.js';
-
+const group = process.argv[2];
 
 async function init(){
-    const consumer=kafka.consumer({ groupId: 'group-01' });
+    const consumer=kafka.consumer({ groupId: group });
 
     await consumer.connect();
 
@@ -14,6 +14,7 @@ async function init(){
                 partition,
                 offset: message.offset,
                 value: message.value.toString(),
+                group
             });
         },
     })

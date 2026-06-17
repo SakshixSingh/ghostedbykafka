@@ -1,4 +1,10 @@
 import { kafka } from './client.js';
+import { createInterface } from 'node:readline';
+
+const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+});
 
 async function init(){
     const producer=kafka.producer();
@@ -7,21 +13,30 @@ async function init(){
     await producer.connect();
     console.log('Producer Connected...');
 
-    await producer.send({
-        topic: 'rider-updates',
-        messages: [
-            {
-                partition: 0,
-                key : 'location-update',
-                value : JSON.stringify({
-                    name : 'Sakshi Singh hahaha',
-                    loc : 'south'
-                })
-            }
-        ],
-    })
+    rl.setPrompt('>>>>');
+    rl.prompt();
 
-    producer.disconnect();
+    rl.on('line',async (input)=>{
+        const [riderName , location] = input.split(' ');
+        await producer.send({
+            topic: 'rider-updates',
+            messages: [
+                {
+                    partition: location?.toLowerCase() === 'north' ? 0 : 1,
+                    key : 'location-update',
+                    value : JSON.stringify({
+                        name : riderName,
+                        location
+                    })
+                }
+            ],
+        });
+        rl.prompt();
+    }).on('close', async () => {
+        await producer.disconnect();
+    });
+
+
 }
 
 init();
